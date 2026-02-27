@@ -1,0 +1,5 @@
+{
+  "name": "LocalBiz Finder",
+  "description": "Search for local businesses using Google Maps data via Serper API.",
+  "requestFramePermissions": []
+}

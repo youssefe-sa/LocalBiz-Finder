@@ -1,0 +1,298 @@
+<div class="min-h-screen bg-white font-sans flex flex-col">
+  <!-- Simplified Header -->
+  <header class="h-16 bg-white border-b border-gray-100 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-8 h-full flex items-center justify-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+          <mat-icon class="text-white !text-xl">business</mat-icon>
+        </div>
+        <h1 class="text-lg font-medium tracking-tight text-gray-900 leading-none">LocalBiz Finder</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <!-- Search Section -->
+    <section class="pt-12 pb-16 border-b border-gray-50 bg-gray-50/30">
+      <div class="max-w-4xl mx-auto px-8">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-light text-gray-900 mb-2 tracking-tight">Prospection intelligente simplifiée</h2>
+          <p class="text-gray-400 text-sm">Trouvez et analysez les entreprises locales en quelques secondes.</p>
+        </div>
+
+        <div class="bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+          <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="flex flex-col gap-1.5">
+            <!-- First Row: Campaign, Keyword, City + Buttons -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-1.5 w-full">
+              <div class="relative lg:col-span-1">
+                <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 z-10 !text-lg">label</mat-icon>
+                <input matInput formControlName="campaignName" placeholder="Campagne" 
+                       class="w-full h-14 pl-12 pr-4 bg-gray-50/50 border-none rounded-xl text-sm focus:ring-1 focus:ring-brand-500 transition-all">
+              </div>
+              <div class="relative lg:col-span-1">
+                <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 z-10 !text-lg">search</mat-icon>
+                <input matInput formControlName="keyword" placeholder="Secteur" 
+                       class="w-full h-14 pl-12 pr-4 bg-gray-50/50 border-none rounded-xl text-sm focus:ring-1 focus:ring-brand-500 transition-all">
+              </div>
+              <div class="relative lg:col-span-1">
+                <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 z-10 !text-lg">location_on</mat-icon>
+                <input matInput formControlName="city" placeholder="Ville" 
+                       class="w-full h-14 pl-12 pr-4 bg-gray-50/50 border-none rounded-xl text-sm focus:ring-1 focus:ring-brand-500 transition-all">
+              </div>
+              <div class="lg:col-span-1">
+                <button mat-flat-button type="submit" 
+                        class="w-full h-14 !px-6 !rounded-xl !bg-gray-900 !text-white transition-all font-medium text-sm shadow-lg shadow-gray-200"
+                        [disabled]="isLoading()">
+                  Lancer l'extraction
+                </button>
+              </div>
+            </div>
+
+            <!-- Second Row: Google Maps URL -->
+            <div class="relative w-full">
+              <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 z-10 !text-lg">link</mat-icon>
+              <input matInput formControlName="mapsUrl" placeholder="Ou collez un lien de recherche Google Maps ici..." 
+                     class="w-full h-14 pl-12 pr-4 bg-gray-50/50 border-none rounded-xl text-sm focus:ring-1 focus:ring-brand-500 transition-all">
+            </div>
+          </form>
+        </div>
+
+        <!-- Advanced Search Progress -->
+        @if (isLoading()) {
+          <div class="mt-16 max-w-3xl mx-auto">
+            <div class="grid grid-cols-5 gap-4">
+              @for (step of searchSteps(); track $index) {
+                <div class="flex flex-col gap-3">
+                  <div class="h-1 rounded-full bg-gray-100 overflow-hidden relative">
+                    <div class="absolute inset-0 bg-brand-500 transition-all duration-1000"
+                         [style.width]="step.status === 'done' ? '100%' : (step.status === 'active' ? '50%' : '0%')"></div>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-bold uppercase tracking-widest"
+                            [class.text-brand-600]="step.status === 'active' || step.status === 'done'"
+                            [class.text-gray-300]="step.status === 'pending'">
+                        {{ step.label }}
+                      </span>
+                      @if (step.status === 'active') {
+                        <div class="w-1 h-1 rounded-full bg-brand-500 animate-ping"></div>
+                      }
+                    </div>
+                    <p class="text-[10px] text-gray-400 leading-tight min-h-[2.5em]"
+                       [class.text-gray-600]="step.status === 'active'">
+                      {{ step.comment }}
+                    </p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Enrichment Progress Overlay -->
+    @if (enrichmentStatus().active) {
+      <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="bg-gray-900 text-white p-5 rounded-2xl shadow-2xl border border-white/10 flex flex-col gap-3">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-brand-500/20 flex items-center justify-center">
+                <mat-icon class="text-brand-400 !text-lg animate-pulse">auto_awesome</mat-icon>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs font-bold tracking-tight">{{ enrichmentStatus().label }}</span>
+                <span class="text-[10px] text-gray-400">{{ enrichmentStatus().comment }}</span>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-brand-400">{{ enrichmentStatus().progress }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+            <div class="h-full bg-brand-500 transition-all duration-500" [style.width.%]="enrichmentStatus().progress"></div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Results Area -->
+    <div class="max-w-[1600px] mx-auto px-8 py-10">
+      @if (hasSearched() && !isLoading()) {
+        <!-- Filter Bar -->
+        <div class="flex flex-col gap-6 mb-8">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2 mb-1">
+                <mat-icon class="!text-sm text-brand-600">campaign</mat-icon>
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest">{{ currentCampaignName() }}</h3>
+              </div>
+              <p class="text-[10px] text-gray-400 uppercase tracking-wider">Extraite le {{ searchDate() }} • {{ filteredResults().length }} établissements qualifiés</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <button mat-stroked-button class="!rounded-xl !border-gray-200 !text-gray-600 hover:!bg-gray-50 !px-6 !h-12 transition-all text-xs font-bold uppercase tracking-widest" 
+                      (click)="enrichAll()" [disabled]="results().length === 0">
+                <mat-icon class="mr-2 !text-sm">auto_awesome</mat-icon>
+                Enrichissement IA Global
+              </button>
+              <button mat-stroked-button type="button" (click)="clearSearch()"
+                      class="!rounded-xl !border-gray-200 !text-gray-500 hover:!bg-gray-50 !px-4 !h-12 transition-all font-medium text-sm"
+                      matTooltip="Réinitialiser la recherche">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <div class="flex items-center gap-2 pr-4 border-r border-gray-200">
+              <mat-checkbox [checked]="showOnlyWithEmail()" (change)="showOnlyWithEmail.set($event.checked)" 
+                            class="!text-[11px] font-bold text-gray-600 uppercase tracking-tight">
+                E-mail uniquement
+              </mat-checkbox>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Site Web :</span>
+              <div class="flex bg-white p-1 rounded-lg border border-gray-200">
+                <button (click)="websiteFilter.set('all')" 
+                        [class]="websiteFilter() === 'all' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'"
+                        class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all">
+                  Tous
+                </button>
+                <button (click)="websiteFilter.set('with')" 
+                        [class]="websiteFilter() === 'with' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'"
+                        class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all">
+                  Avec Site
+                </button>
+                <button (click)="websiteFilter.set('without')" 
+                        [class]="websiteFilter() === 'without' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'"
+                        class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all">
+                  Sans Site
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Minimalist Table -->
+        <div class="border-t border-gray-100">
+          <table mat-table [dataSource]="filteredResults()" class="w-full">
+            <!-- Company Info -->
+            <ng-container matColumnDef="title">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Établissement</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50">
+                <div class="flex flex-col">
+                  <span class="text-sm text-gray-900">{{ element.title }}</span>
+                  <span class="text-[10px] text-gray-400 uppercase tracking-wider">{{ element.category }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- AI Insight -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Analyse IA</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50 max-w-[280px]">
+                @if (element.description) {
+                  <p class="text-xs text-gray-500 leading-relaxed truncate">
+                    {{ element.description }}
+                  </p>
+                } @else {
+                  <span class="text-[10px] text-gray-300 italic uppercase">Prêt</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Contact -->
+            <ng-container matColumnDef="address">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Adresse</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50">
+                <span class="text-xs text-gray-500 truncate block max-w-[200px]">{{ element.address }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Website -->
+            <ng-container matColumnDef="website">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Site Web</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50">
+                @if (element.website) {
+                  <a [href]="element.website" target="_blank" class="text-xs text-brand-600 hover:underline truncate block max-w-[150px]">
+                    {{ element.website }}
+                  </a>
+                } @else {
+                  <span class="text-[10px] text-gray-300 uppercase">N/A</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Email -->
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">E-mail</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50">
+                @if (element.email) {
+                  <span class="text-xs text-brand-600">{{ element.email }}</span>
+                } @else {
+                  <span class="text-[10px] text-gray-300 uppercase">N/A</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Rating -->
+            <ng-container matColumnDef="rating">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Note</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-gray-900">{{ element.rating || '0' }}</span>
+                  <div class="flex">
+                    @for (s of [1,2,3,4,5]; track s) {
+                      <mat-icon class="!text-[8px] h-auto w-auto" [class.text-amber-400]="s <= (element.rating || 0)" [class.text-gray-100]="s > (element.rating || 0)">star</mat-icon>
+                    }
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="!py-4 !px-4 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest border-b border-gray-50">Actions</th>
+              <td mat-cell *matCellDef="let element" class="!py-4 !px-4 border-b border-gray-50 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button mat-icon-button (click)="openDetails(element); $event.stopPropagation()" class="!text-gray-300 hover:!text-gray-600 transition-colors" matTooltip="Détails complets">
+                    <mat-icon class="!text-lg">visibility</mat-icon>
+                  </button>
+                  @if (element.websitePrompt) {
+                    <button mat-icon-button (click)="openWebsitePrompt(element); $event.stopPropagation()" class="!text-indigo-300 hover:!text-indigo-600 transition-colors" matTooltip="Voir le Prompt Web">
+                      <mat-icon class="!text-lg">web</mat-icon>
+                    </button>
+                  }
+                  <button mat-icon-button (click)="enrichWithAI(element); $event.stopPropagation()" [disabled]="isEnriching(element.cid || element.title)" 
+                          class="!text-gray-300 hover:!text-brand-600 transition-colors" matTooltip="Enrichir avec l'IA">
+                    @if (isEnriching(element.cid || element.title)) {
+                      <mat-spinner diameter="16"></mat-spinner>
+                    } @else {
+                      <mat-icon class="!text-lg">auto_awesome</mat-icon>
+                    }
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['title', 'description', 'address', 'website', 'email', 'rating', 'actions']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['title', 'description', 'address', 'website', 'email', 'rating', 'actions'];" 
+                class="hover:bg-gray-50 transition-colors cursor-pointer" (click)="openDetails(row)"></tr>
+          </table>
+        </div>
+      } @else if (!isLoading()) {
+        <div class="py-24 flex flex-col items-center justify-center text-center">
+          <h2 class="text-xl font-light text-gray-900 mb-2">Prêt pour une nouvelle recherche ?</h2>
+          <p class="text-gray-400 text-sm max-w-xs mx-auto">Saisissez vos critères ci-dessus pour commencer l'extraction.</p>
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Simplified Footer -->
+  <footer class="py-8 border-t border-gray-50">
+    <div class="max-w-7xl mx-auto px-8 text-center">
+      <p class="text-[10px] text-gray-400 uppercase tracking-[0.2em]">LocalBiz Finder Intelligence © 2026 Enterprise Solutions Ltd.</p>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,147 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div class="flex items-center justify-between mb-12">
+    <div class="flex flex-col gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-100">
+          <mat-icon class="text-white !text-xl">folder_special</mat-icon>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Gestion des <span class="text-brand-600">Campagnes</span></h1>
+      </div>
+      <p class="text-sm text-gray-500">Gérez, visualisez et exportez vos recherches sauvegardées automatiquement.</p>
+    </div>
+    <button mat-stroked-button (click)="loadCampaigns()" class="!rounded-xl !border-gray-200 !h-12 !px-6">
+      <mat-icon class="mr-2">refresh</mat-icon> Actualiser
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Campaigns List -->
+    <div class="lg:col-span-4 flex flex-col gap-4">
+      <div class="flex flex-col gap-2 mb-2">
+        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rechercher une campagne</h3>
+        <div class="relative group">
+          <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-600 transition-colors">search</mat-icon>
+          <input [(ngModel)]="searchTerm" placeholder="Nom, ville, secteur..." 
+                 class="w-full pl-12 pr-4 h-12 bg-white border border-gray-100 rounded-2xl text-xs focus:ring-2 focus:ring-brand-500 transition-all outline-none shadow-sm">
+        </div>
+      </div>
+
+      <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Historique des Campagnes</h3>
+      
+      @if (isLoading() && campaigns().length === 0) {
+        <div class="flex justify-center py-12">
+          <mat-spinner diameter="32"></mat-spinner>
+        </div>
+      }
+
+      @if (filteredCampaigns().length === 0 && !isLoading()) {
+        <div class="bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+          <mat-icon class="!text-4xl text-gray-200 mb-2">folder_open</mat-icon>
+          <p class="text-xs text-gray-400">Aucune campagne trouvée.</p>
+        </div>
+      }
+
+      @for (camp of filteredCampaigns(); track camp.id) {
+        <div (click)="viewCampaign(camp.id!)" 
+             [class.border-brand-600]="selectedCampaign()?.id === camp.id"
+             [class.bg-brand-50]="selectedCampaign()?.id === camp.id"
+             class="group p-5 bg-white border border-gray-100 rounded-2xl hover:border-brand-200 hover:shadow-md transition-all cursor-pointer relative">
+          <div class="flex flex-col gap-1 pr-8">
+            <span class="text-sm font-bold text-gray-900 truncate">{{ camp.name }}</span>
+            <span class="text-[10px] text-gray-400 uppercase tracking-wider">{{ camp.date }}</span>
+            <div class="flex items-center gap-2 mt-3">
+              @if (camp.keyword) {
+                <span class="px-2 py-0.5 bg-gray-100 rounded-md text-[9px] text-gray-500 font-medium">{{ camp.keyword }}</span>
+              }
+              @if (camp.city) {
+                <span class="px-2 py-0.5 bg-gray-100 rounded-md text-[9px] text-gray-500 font-medium">{{ camp.city }}</span>
+              }
+            </div>
+          </div>
+          <button mat-icon-button (click)="deleteCampaign(camp.id!)" 
+                  class="absolute top-3 right-3 !w-8 !h-8 !text-gray-300 hover:!text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+            <mat-icon class="!text-lg">delete_outline</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Campaign Details -->
+    <div class="lg:col-span-8">
+      @if (selectedCampaign(); as camp) {
+        <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm animate-in fade-in slide-in-from-right-8 duration-500">
+          <div class="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+            <div class="flex flex-col gap-1">
+              <h2 class="text-xl font-bold text-gray-900">{{ camp.name }}</h2>
+              <p class="text-xs text-gray-400 uppercase tracking-wider">Extraite le {{ camp.date }} • {{ camp.results?.length || 0 }} prospects</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button mat-flat-button (click)="exportCampaign(camp)" class="!rounded-xl !bg-gray-900 !text-white !h-11 !px-6">
+                <mat-icon class="mr-2">download</mat-icon> Exporter Excel
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="camp.results || []" class="w-full">
+              <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef class="!py-4 !px-6 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest">Établissement</th>
+                <td mat-cell *matCellDef="let element" class="!py-4 !px-6">
+                  <div class="flex flex-col">
+                    <span class="text-sm font-medium text-gray-900">{{ element.title }}</span>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">{{ element.category }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="address">
+                <th mat-header-cell *matHeaderCellDef class="!py-4 !px-6 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest">Adresse</th>
+                <td mat-cell *matCellDef="let element" class="!py-4 !px-6 text-xs text-gray-500">{{ element.address }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="website">
+                <th mat-header-cell *matHeaderCellDef class="!py-4 !px-6 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest">Web</th>
+                <td mat-cell *matCellDef="let element" class="!py-4 !px-6">
+                  @if (element.website) {
+                    <a [href]="element.website" target="_blank" class="text-brand-600 hover:underline text-xs">Lien</a>
+                  } @else {
+                    <span class="text-[10px] text-gray-300">-</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef class="!py-4 !px-6 !font-medium !text-gray-400 uppercase text-[10px] tracking-widest">Email</th>
+                <td mat-cell *matCellDef="let element" class="!py-4 !px-6">
+                  @if (element.email) {
+                    <span class="text-xs text-emerald-600 font-medium">{{ element.email }}</span>
+                  } @else {
+                    <span class="text-[10px] text-gray-300 italic">Non trouvé</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="!py-4 !px-6"></th>
+                <td mat-cell *matCellDef="let element" class="!py-4 !px-6 text-right">
+                  <button mat-icon-button (click)="openDetails(element)" class="!text-gray-400">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="businessColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: businessColumns;" class="hover:bg-gray-50 transition-colors"></tr>
+            </table>
+          </div>
+        </div>
+      } @else {
+        <div class="h-full min-h-[400px] bg-gray-50 border border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center text-center p-12">
+          <mat-icon class="!text-6xl text-gray-200 mb-4">analytics</mat-icon>
+          <h3 class="text-lg font-bold text-gray-400">Sélectionnez une campagne</h3>
+          <p class="text-sm text-gray-400 max-w-xs">Cliquez sur une campagne à gauche pour visualiser les prospects extraits.</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

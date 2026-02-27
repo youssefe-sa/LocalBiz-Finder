@@ -1,0 +1,64 @@
+.custom-dialog-container .mat-mdc-dialog-container {
+  padding: 0 !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+}
+
+.custom-menu {
+  border-radius: 16px !important;
+  margin-top: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.custom-menu .mat-mdc-menu-item {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #4b5563 !important;
+}
+
+.custom-menu .mat-mdc-menu-item mat-icon {
+  color: #9ca3af !important;
+  margin-right: 12px !important;
+}
+
+.custom-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background {
+  background-color: var(--brand-600) !important;
+  border-color: var(--brand-600) !important;
+}
+
+.custom-checkbox .mdc-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #4b5563 !important;
+}
+
+/* Navigation */
+nav a.bg-gray-50 {
+  color: #059669;
+}
+
+/* Transitions */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
